@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Open Storefront</title>
+  <style>
+    body { font-family: sans-serif; }
+    button { display: block; margin: 8px 0; }
+  </style>
+</head>
+<body>
+
+<div id="menu">Loading...</div>
+
+<script>
+let menu = {};
+let currentStorefront = "Home Storefront";
+
+async function openStorefront(id) {
+  const url = "https://drive.google.com/uc?export=download&id=" + id;
+  const res = await fetch(url);
+  const text = await res.text();
+  menu = JSON.parse(text);
+  localStorage.setItem("storefront.json", text);
+  drawMenu(Object.keys(menu));
+}
+
+function drawMenu(items) {
+  const menuDiv = document.getElementById("menu");
+  menuDiv.innerHTML = `<h2>${currentStorefront}</h2>`;
+
+  if (currentStorefront !== "Home Storefront") {
+    const homeBtn = document.createElement("button");
+    homeBtn.textContent = "< home";
+    homeBtn.onclick = () => loadHomeStorefront();
+    menuDiv.appendChild(homeBtn);
+  }
+
+  items.forEach((item, index) => {
+    const btn = document.createElement("button");
+    btn.textContent = index + ": " + item;
+    btn.onclick = () => selectItem(index);
+    menuDiv.appendChild(btn);
+  });
+}
+
+function loadHomeStorefront() {
+  const id = localStorage.getItem("home.3sf") || "1m99FhKG-zpNd7VoAOjFV11dyJsDbnUv9";
+  currentStorefront = "Home Storefront";
+  openStorefront(id);
+}
+
+async function selectItem(index) {
+  const items = Object.keys(menu);
+  const item = menu[items[index]];
+
+  if (item[1] === "storefront") {
+    currentStorefront = items[index];
+    openStorefront(item[0]);
+  } else {
+    await downloadFile(item[0], item[1]);
+    alert("Download successful.");
+  }
+}
+
+async function downloadFile(url, filename) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+loadHomeStorefront();
+</script>
+
+</body>
+</html>
