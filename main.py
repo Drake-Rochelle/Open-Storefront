@@ -29,8 +29,11 @@ def open_storefront(id):
         menu_json = f.read()
     menu = json.loads(menu_json)
 
-with open("home.3sf") as f:
-    id = f.read()
+if (not os.path.exists("home.3sf")):
+    id = "1m99FhKG-zpNd7VoAOjFV11dyJsDbnUv9"
+else:
+    with open("home.3sf") as f:
+        id = f.read()
 current_storefront = "Home Storefront"
 while (True):
     clear()
