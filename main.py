@@ -44,8 +44,11 @@ while (True):
     draw_menu(items)
     sel = input()
     if (sel == "x"):
-        with open("home.3sf") as f:
-            id = f.read()
+        if (not os.path.exists("home.3sf")):
+            id = "1m99FhKG-zpNd7VoAOjFV11dyJsDbnUv9"
+        else:
+            with open("home.3sf") as f:
+                id = f.read()
         current_storefront = "Home Storefront"
         continue
     ind = int(sel)
@@ -56,7 +59,9 @@ while (True):
     else:
         clear()
         print("Downloading...")
-        os.makedirs(local_path+item[2], exist_ok=True)
-        urllib.request.urlretrieve(item[0], local_path+item[2]+"/"+item[1])
+        p = item[2].replace("/3DS Storefront/", "/Open Storefront/")
+        os.makedirs(local_path+p, exist_ok=True)
+        urllib.request.urlretrieve(item[0], local_path+p+"/"+item[1])
         clear()
         print('Download successfull.\nEnter any symbol to return to storefront...')
+        input()
