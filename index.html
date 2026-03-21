@@ -16,7 +16,7 @@
 
 <script>
 const consoleEl = document.getElementById('console');
-const apiKey = 'AIzaSyAi0maGeBp6sTbtp5ED3gqo9ZUGuh-Caes';
+const apiKey = 'AIzaSyAi0maGeBp6sTbtp5ED3gqo9ZUGuh-Caes'; // <-- Replace with your Google Drive API key
 
 let menu = {};
 let currentStorefront = 'Home Storefront';
@@ -35,7 +35,8 @@ async function fetchFileFromDrive(fileId) {
   const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
   const response = await fetch(url);
   if (!response.ok) throw new Error('Network response was not ok');
-  return await response.blob();
+  const blob = await response.blob();
+  return blob;
 }
 
 async function saveBlobAsFile(blob, filename) {
@@ -59,82 +60,64 @@ async function loadStorefront(id) {
   }
 }
 
-function renderMenu(items) {
-  const container = document.createElement('div');
+async function main() {
+  currentId = homeId;
+  currentStorefront = 'Home Storefront';
 
-  // Home button
-  const homeBtn = document.createElement('button');
-  homeBtn.textContent = '< home';
-  homeBtn.onclick = () => {
-    currentId = homeId;
-    currentStorefront = 'Home Storefront';
-    mainLoop();
-  };
-  container.appendChild(homeBtn);
-
-  container.appendChild(document.createElement('br'));
-  container.appendChild(document.createElement('br'));
-
-  // Item buttons
-  items.forEach((item, index) => {
-    const btn = document.createElement('button');
-    btn.textContent = `${index}: ${item}`;
-    btn.onclick = () => handleSelection(index, items);
-    container.appendChild(btn);
-    container.appendChild(document.createElement('br'));
-  });
-
-  document.body.appendChild(container);
-  return container;
-}
-
-async function handleSelection(index, items) {
-  const itemName = items[index];
-  const item = menu[itemName];
-
-  if (item[1] === 'storefront') {
-    currentId = item[0];
-    currentStorefront = itemName;
-    mainLoop();
-  } else {
+  while (true) {
     clearConsole();
-    print('Downloading...');
-    try {
-      const blob = await fetchFileFromDrive(item[0]);
-      await saveBlobAsFile(blob, item[1]);
-      print('Download successful.');
-    } catch (e) {
-      print('Download failed: ' + e);
+    print(currentStorefront + ':\n');
+    print('x: <home>');
+    await loadStorefront(currentId);
+    const items = Object.keys(menu);
+    items.forEach((item, index) => {
+      print(`${index}: ${item}`);
+    });
+    const selection = await getInput('');
+    if (selection.trim() === 'x') {
+      currentId = homeId;
+      currentStorefront = 'Home Storefront';
+      continue;
     }
-
-    // Button to return
-    const backBtn = document.createElement('button');
-    backBtn.textContent = 'Return to storefront';
-    backBtn.onclick = () => mainLoop();
-    document.body.appendChild(backBtn);
+    const index = parseInt(selection);
+    if (isNaN(index) || index < 0 || index >= items.length) {
+      print('Invalid selection.');
+      continue;
+    }
+    const itemName = items[index];
+    const item = menu[itemName];
+    if (item[1] === 'storefront') {
+      currentId = item[0];
+      currentStorefront = itemName;
+    } else {
+      // Download the file
+      clearConsole();
+      print('Downloading...');
+      try {
+        const blob = await fetchFileFromDrive(item[0]);
+        // Save the file in browser
+        await saveBlobAsFile(blob, item[1]);
+        print('Download successful.');
+      } catch (e) {
+        print('Download failed: ' + e);
+      }
+      await getInput('Enter any key to return...');
+    }
   }
 }
 
-async function mainLoop() {
-  clearConsole();
-  print(currentStorefront + ':\n');
-  print('Loading...');
-
-  await loadStorefront(currentId);
-
-  clearConsole();
-  print(currentStorefront + ':\n');
-
-  const items = Object.keys(menu);
-
-  // Remove old menu buttons
-  document.querySelectorAll('div.menu-container').forEach(el => el.remove());
-
-  const menuEl = renderMenu(items);
-  menuEl.classList.add('menu-container');
+function getInput(promptText) {
+  return new Promise((resolve) => {
+    print(promptText);
+    window.onclick = () => {
+      window.onclick = null;
+      resolve('');
+    };
+  });
 }
 
-mainLoop();
+main();
 </script>
+
 </body>
 </html>
