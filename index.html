@@ -54,6 +54,7 @@ async def open_storefront(id):
     global menu
     url = f"https://drive.google.com/uc?export=download&id={id}"
     text = await fetch_json(url)
+    term_write(text)
     menu = json.loads(text)
 
 def draw_menu():
