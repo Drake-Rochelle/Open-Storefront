@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html>
 <head>
   <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
   <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
@@ -125,9 +127,13 @@ document.getElementById("submit").addEventListener("click", on_submit)
 # -----------------------------
 # Start
 # -----------------------------
+import asyncio
+
 async def main():
     await load_storefront()
-main()
+
+asyncio.ensure_future(main())
 </script>
 
 </body>
+</html>
