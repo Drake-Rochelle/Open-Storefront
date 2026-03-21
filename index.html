@@ -1,123 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Storefront Menu</title>
-<style>
-  body { font-family: monospace; background: #000; color: #0f0; margin: 0; padding: 10px; }
-  #console { white-space: pre; }
-  a { color: #0f0; text-decoration: underline; cursor: pointer; }
-</style>
+    <meta charset="UTF-8">
+    <title>Open Storefront</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="console"></div>
+<div id="app">
+    <h1 id="storefront-title">Loading…</h1>
 
-<script>
-const consoleEl = document.getElementById('console');
-const apiKey = 'AIzaSyAi0maGeBp6sTbtp5ED3gqo9ZUGuh-Caes'; // <-- Replace with your Google Drive API key
+    <button id="home-btn" style="display:none;">Home</button>
 
-let menu = {};
-let currentStorefront = 'Home Storefront';
-let currentId = '';
-const homeId = '1m99FhKG-zpNd7VoAOjFV11dyJsDbnUv9';
+    <ul id="menu"></ul>
 
-function print(text) {
-  consoleEl.textContent += text + '\n';
-}
+    <div id="status"></div>
+</div>
 
-function clearConsole() {
-  consoleEl.textContent = '';
-}
-
-async function fetchFileFromDrive(fileId) {
-  const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Network response was not ok');
-  const blob = await response.blob();
-  return blob;
-}
-
-async function saveBlobAsFile(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-async function loadStorefront(id) {
-  try {
-    const data = await fetchFileFromDrive(id);
-    const text = await data.text();
-    menu = JSON.parse(text);
-  } catch (e) {
-    print('Error loading storefront: ' + e);
-  }
-}
-
-async function main() {
-  currentId = homeId;
-  currentStorefront = 'Home Storefront';
-
-  while (true) {
-    clearConsole();
-    print(currentStorefront + ':');
-    print('(x) <home>');
-    await loadStorefront(currentId);
-    const items = Object.keys(menu);
-    items.forEach((item, index) => {
-      print(`${index}: ${item}`);
-    });
-    const selection = await getInput('Select an option by number or "x" to home: ');
-    if (selection.trim() === 'x') {
-      currentId = homeId;
-      currentStorefront = 'Home Storefront';
-      continue;
-    }
-    const index = parseInt(selection);
-    if (isNaN(index) || index < 0 || index >= items.length) {
-      print('Invalid selection.');
-      continue;
-    }
-    const itemName = items[index];
-    const item = menu[itemName];
-    if (item[1] === 'storefront') {
-      currentId = item[0];
-      currentStorefront = itemName;
-    } else {
-      // Download the file
-      clearConsole();
-      print('Downloading...');
-      try {
-        const blob = await fetchFileFromDrive(item[0]);
-        // Save the file in browser
-        await saveBlobAsFile(blob, item[1]);
-        print('Download successful.');
-      } catch (e) {
-        print('Download failed: ' + e);
-      }
-      await getInput('Enter any key to return...');
-    }
-  }
-}
-
-function getInput(promptText) {
-  return new Promise((resolve) => {
-    print(promptText);
-    window.onclick = () => {
-      window.onclick = null;
-      resolve('');
-    };
-  });
-}
-
-main();
-</script>
-
+<script src="drive.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
