@@ -66,14 +66,14 @@ async function main() {
 
   while (true) {
     clearConsole();
-    print(currentStorefront + ':');
-    print('(x) <home>');
+    print(currentStorefront + ':\n');
+    print('x: <home>');
     await loadStorefront(currentId);
     const items = Object.keys(menu);
     items.forEach((item, index) => {
       print(`${index}: ${item}`);
     });
-    const selection = await getInput('Select an option by number or "x" to home: ');
+    const selection = await getInput('');
     if (selection.trim() === 'x') {
       currentId = homeId;
       currentStorefront = 'Home Storefront';
