@@ -1,139 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
-  <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Storefront Menu</title>
+<style>
+  body { font-family: monospace; background: #000; color: #0f0; margin: 0; padding: 10px; }
+  #console { white-space: pre; }
+  a { color: #0f0; text-decoration: underline; cursor: pointer; }
+</style>
 </head>
-
 <body>
 
-<pre id="terminal"></pre>
+<div id="console"></div>
 
-<div style="margin-top: 1em;">
-  <input id="user_input" placeholder="Enter selection">
-  <button id="submit">Submit</button>
-</div>
+<script>
+const consoleEl = document.getElementById('console');
+const apiKey = 'AIzaSyAi0maGeBp6sTbtp5ED3gqo9ZUGuh-Caes'; // <-- Replace with your Google Drive API key
 
-<script type="py">
-from pyodide.http import pyfetch
-import json, os
+let menu = {};
+let currentStorefront = 'Home Storefront';
+let currentId = '';
+const homeId = '1m99FhKG-zpNd7VoAOjFV11dyJsDbnUv9';
 
-# -----------------------------
-# State
-# -----------------------------
-menu = {}
-current_storefront = "Home Storefront"
-storefront_id = "1m99FhKG-zpNd7VoAOjFV11dyJsDbnUv9"
+function print(text) {
+  consoleEl.textContent += text + '\n';
+}
 
-# -----------------------------
-# Helpers
-# -----------------------------
-from js import document
+function clearConsole() {
+  consoleEl.textContent = '';
+}
 
-def term_write(text):
-    document.getElementById("terminal").innerText = text
+async function fetchFileFromDrive(fileId) {
+  const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Network response was not ok');
+  const blob = await response.blob();
+  return blob;
+}
 
-def clear():
-    document.getElementById("terminal").innerText = ""
+async function saveBlobAsFile(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
-async def fetch_json(url):
-    # Use a CORS proxy so Google Drive works
-    proxy = "https://corsproxy.io/?"
-    response = await pyfetch(proxy + url)
-    return await response.text()
+async function loadStorefront(id) {
+  try {
+    const data = await fetchFileFromDrive(id);
+    const text = await data.text();
+    menu = JSON.parse(text);
+  } catch (e) {
+    print('Error loading storefront: ' + e);
+  }
+}
 
-async def fetch_file(url):
-    proxy = "https://corsproxy.io/?"
-    response = await pyfetch(proxy + url)
-    return await response.bytes()
+async function main() {
+  currentId = homeId;
+  currentStorefront = 'Home Storefront';
 
-# -----------------------------
-# Storefront Logic
-# -----------------------------
-async def open_storefront(id):
-    global menu
-    url = f"https://drive.google.com/uc?export=download&id={id}"
-    text = await fetch_json(url)
-    term_write(text)
-    menu = json.loads(text)
+  while (true) {
+    clearConsole();
+    print(currentStorefront + ':');
+    print('(x) <home>');
+    await loadStorefront(currentId);
+    const items = Object.keys(menu);
+    items.forEach((item, index) => {
+      print(`${index}: ${item}`);
+    });
+    const selection = await getInput('Select an option by number or "x" to home: ');
+    if (selection.trim() === 'x') {
+      currentId = homeId;
+      currentStorefront = 'Home Storefront';
+      continue;
+    }
+    const index = parseInt(selection);
+    if (isNaN(index) || index < 0 || index >= items.length) {
+      print('Invalid selection.');
+      continue;
+    }
+    const itemName = items[index];
+    const item = menu[itemName];
+    if (item[1] === 'storefront') {
+      currentId = item[0];
+      currentStorefront = itemName;
+    } else {
+      // Download the file
+      clearConsole();
+      print('Downloading...');
+      try {
+        const blob = await fetchFileFromDrive(item[0]);
+        // Save the file in browser
+        await saveBlobAsFile(blob, item[1]);
+        print('Download successful.');
+      } catch (e) {
+        print('Download failed: ' + e);
+      }
+      await getInput('Enter any key to return...');
+    }
+  }
+}
 
-def draw_menu():
-    clear()
-    term_write(f"{current_storefront}:\n\n")
-    if current_storefront != "Home Storefront":
-        term_write("x: <home>\n")
-    for i, key in enumerate(menu.keys()):
-        term_write(f"{i}: {key}\n")
+function getInput(promptText) {
+  return new Promise((resolve) => {
+    print(promptText);
+    window.onclick = () => {
+      window.onclick = null;
+      resolve('');
+    };
+  });
+}
 
-async def handle_selection(sel):
-    global storefront_id, current_storefront
-
-    if sel == "x" and current_storefront != "Home Storefront":
-        storefront_id = "1m99FhKG-zpNd7VoAOjFV11dyJsDbnUv9"
-        current_storefront = "Home Storefront"
-        await load_storefront()
-        return
-
-    try:
-        index = int(sel)
-    except:
-        term_write("\nInvalid selection.\n")
-        return
-
-    items = list(menu.keys())
-    if index < 0 or index >= len(items):
-        term_write("\nInvalid selection.\n")
-        return
-
-    item = menu[items[index]]
-
-    if item[1] == "storefront":
-        storefront_id = item[0]
-        current_storefront = items[index]
-        await load_storefront()
-    else:
-        await download_item(item)
-
-async def download_item(item):
-    clear()
-    term_write("Downloading...\n")
-
-    url = item[0]
-    filename = item[1]
-
-    data = await fetch_file(url)
-
-    # Save into PyScript virtual FS
-    with open(filename, "wb") as f:
-        f.write(data)
-
-    term_write(f"Download complete: {filename}\n")
-    term_write("Press submit to return.\n")
-
-async def load_storefront():
-    clear()
-    term_write("Loading...\n")
-    await open_storefront(storefront_id)
-    draw_menu()
-
-# -----------------------------
-# UI Event Binding
-# -----------------------------
-def on_submit(event):
-    sel = document.getElementById("user_input").value
-    document.getElementById("user_input").value = ""
-    return handle_selection(sel)
-
-document.getElementById("submit").addEventListener("click", on_submit)
-# -----------------------------
-# Start
-# -----------------------------
-import asyncio
-
-async def main():
-    await load_storefront()
-
-asyncio.ensure_future(main())
+main();
 </script>
 
 </body>
