@@ -4,7 +4,7 @@
 </head>
 <body>
   <script type="py">
-    response = await pyfetch("https://drive.google.com/uc?export=download&id=1m99FhKG-zpNd7VoAOjFV11dyJsDbnUv9")
-    text = await response.text()
+    response = pyfetch("https://drive.google.com/uc?export=download&id=1m99FhKG-zpNd7VoAOjFV11dyJsDbnUv9")
+    text = response.text()
   </script>
 </body>
