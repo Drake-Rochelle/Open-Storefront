@@ -2,9 +2,19 @@ import urllib.request
 import json
 import os
 import platform
-
+from pathlib import Path
+import sys
 menu = {}
+if getattr(sys, 'frozen', False):
+    SCRIPT_DIR = Path(sys.executable).resolve().parent
+else:
+    SCRIPT_DIR = Path(__file__).resolve().parent
 local_path = os.path.expanduser("~")
+if (Path.exists(SCRIPT_DIR / "download_path.txt")):
+    with open(SCRIPT_DIR / "download_path.txt") as f:
+        d = f.read()
+        if (d!="C:/Path/To/Custom/Download/Folder"):
+            local_path = d
 current_storefront = ""
 
 def clear():
@@ -51,6 +61,10 @@ while (True):
                 id = f.read()
         current_storefront = "Home Storefront"
         continue
+    elif len(sel) >= 15:
+            current_storefront = "Unknown Storefront"
+            id = sel
+            continue
     ind = int(sel)
     item = menu[items[ind]]
     if (item[1] == "storefront"):
