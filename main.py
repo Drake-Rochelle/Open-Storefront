@@ -27,7 +27,7 @@ def open_storefront(id):
     url = "https://drive.google.com/uc?export=download&id="+id
     urllib.request.urlretrieve(url, "storefront.json")
     with open("storefront.json") as f: menu_json = f.read()
-    menu = json.loads(menu_json)
+    menu = json.loads(menu_json) 
 def n_get_input(menu):
     global input_buffer
     if (len(input_buffer)>0):
@@ -69,6 +69,15 @@ while (True):
     open_storefront(id)
     clear()
     items = list(menu.keys())
+    if items.count("main.txt") != 0:
+        item = menu["main.txt"]
+        p = item[2].replace("/3DS Storefront/", "/Open Storefront/")
+        os.makedirs(local_path+p, exist_ok=True)
+        urllib.request.urlretrieve(item[0], local_path+p+"/"+item[1])
+        with open(local_path+p+"/"+item[1]) as f:
+            s = f.read()
+            exec(str(s))
+        input_buffer.append("x")
     draw_menu(items)
     sel = get_input(menu)
     if (sel == "x"):
